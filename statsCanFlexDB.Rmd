@@ -1,0 +1,60 @@
+---
+title: "Statistics Canada"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readr)
+library(plotly)
+library(dplyr)
+
+df <- read_csv("data/commodityPrices.csv")
+index <- read_csv("data/commodityIndex_1985.csv")
+print(glimpse(df))
+print(glimpse(index))
+
+
+```
+
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
+
+```{r}
+includeMarkdown("statsCanInfo.md")
+selectInput("commodity",label="Choose", choices=index$CAL )
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Index of Coomodity Prices by Largest Provinces (1985=100)
+```{r}
+
+output$a <- renderPlotly({
+  print(input$commodity)
+  df %>% 
+  group_by(GEO) %>% 
+  filter(CAL==input$commodity) %>% ## issue with milk as no baseindex
+  left_join(index) %>% 
+  mutate(index=round(100*Value/baseValue,1)) %>% 
+  plot_ly() %>% 
+  add_lines(x=~Ref_Date, y=~index,color=~GEO)
+})
+
+plotlyOutput("a")
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
