@@ -4,7 +4,8 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
-runtime: shiny    
+runtime: shiny 
+csl: biomed-central.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -20,24 +21,31 @@ print(glimpse(index))
 
 
 ```
-
+Farm Product Prices
+===================================== 
 
 Inputs {.sidebar data-width=250}
 -------------------------------------
 
-```{r}
+```{r global-info}
 includeMarkdown("statsCanInfo.md")
-selectInput("commodity",label="Choose", choices=index$CAL )
+hr()
+```
+
+```{r commodity-inputs}
+includeMarkdown("commodityInfo.md")
+selectInput("commodity",label="Choose Product", choices=index$CAL )
 
 ```
 
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Index of Coomodity Prices by Largest Provinces (1985=100)
+### Index of Commodity Prices by Largest Provinces (All Provinces 1985=100)
+
 ```{r}
 
-output$a <- renderPlotly({
+output$farmProduct_ts <- renderPlotly({
   print(input$commodity)
   df %>% 
   group_by(GEO) %>% 
@@ -45,16 +53,24 @@ output$a <- renderPlotly({
   left_join(index) %>% 
   mutate(index=round(100*Value/baseValue,1)) %>% 
   plot_ly() %>% 
-  add_lines(x=~Ref_Date, y=~index,color=~GEO)
+  add_lines(x=~Ref_Date, y=~index,color=~GEO) %>% 
+    layout(margin=list(b=120),
+           xaxis=list(title=""),
+           title="Pan/Zoom/Hover. Legend Entries are Toggable") %>% 
+   config(displayModeBar = F,showLink = F)
 })
 
-plotlyOutput("a")
+plotlyOutput("farmProduct_ts")
 
 ```
 
-### Chart C
+Some other area
+===================================== 
+
+Inputs {.sidebar data-width=250}
+-------------------------------------
 
 ```{r}
-
+includeMarkdown("statsCanInfo.md")
+hr()
 ```
-
