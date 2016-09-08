@@ -34,17 +34,21 @@ hr()
 
 ```{r commodity-inputs}
 includeMarkdown("commodityInfo.md")
-selectInput("commodity",label="Choose Product", choices=index$CAL )
+
 
 ```
 
-Column {data-width=350}
+Row {data-height=500}
 -----------------------------------------------------------------------
 
-### Index of Commodity Prices by Largest Provinces (All Provinces 1985=100)
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Index of Farm Product Prices by Largest Provinces (All Provinces 1985=100)
 
 ```{r}
-
+selectInput("commodity",label="Choose Product", choices=index$CAL )
 output$farmProduct_ts <- renderPlotly({
   print(input$commodity)
   df %>% 
@@ -63,6 +67,62 @@ output$farmProduct_ts <- renderPlotly({
 plotlyOutput("farmProduct_ts")
 
 ```
+
+Column {data-width=500 .tabset}
+-----------------------------------------------------------------------
+
+###  Meat & Poultry Prices $/kg - Ontario  
+
+```{r}
+
+
+ meat <- c("Cattle","Calves","Lambs","Hogs","Chickens","Turkeys")
+renderPlotly({
+ 
+
+ df %>% 
+  filter(CAL %in% meat &GEO=="Ontario"&Ref_Date>="1985/01") %>% 
+  mutate(perKilo=ifelse(CAL=="Chickens"|CAL=="Turkeys",Value,Value*2.20462/100)) %>% 
+  group_by(CAL) %>% 
+  plot_ly() %>% 
+  add_lines(x=~Ref_Date, y=~perKilo,color=~CAL) %>% 
+    layout(
+      title="Pan/Zoom/Hover. Legend Entries are Toggable")
+    
+
+})
+```
+
+### Data
+
+```{r}
+
+
+ meat <- c("Cattle","Calves","Lambs","Hogs","Chickens","Turkeys")
+
+DT::renderDataTable ({
+ 
+ df %>% 
+  filter(CAL %in% meat &GEO=="Ontario"&Ref_Date>="1985/01") %>% 
+  mutate(perKilo=ifelse(CAL=="Chickens"|CAL=="Turkeys",Value,Value*2.20462/100)) %>% 
+  #group_by(CAL) %>% 
+ DT::datatable(class='compact stripe hover row-border order-column',rownames=FALSE,
+               extensions = 'Buttons',
+               options= list(paging = FALSE, searching = TRUE,info=FALSE,
+                             dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+     deferRender = TRUE,
+  scrollY = 400,
+  scroller = TRUE))
+
+})
+```
+
+Row {data-height=500}
+-----------------------------------------------------------------------
+
+### Highlights
+
 
 Some other area
 ===================================== 
