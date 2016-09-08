@@ -1,9 +1,12 @@
 ---
 title: "Statistics Canada"
+author: "mytinyshinys"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: rows
     vertical_layout: fill
+    social: [ menu ]
+    source_code: embed
 runtime: shiny 
 csl: biomed-central.csl
 ---
@@ -14,10 +17,32 @@ library(readr)
 library(plotly)
 library(dplyr)
 
+## commodities with data from 1985
 df <- read_csv("data/commodityPrices.csv")
 index <- read_csv("data/commodityIndex_1985.csv")
-print(glimpse(df))
-print(glimpse(index))
+
+# calculate biggest winners and losers (excl Ontario Wheat and feeder prices)
+dfAll <- read_csv("data/mostCommodityPrices.csv")
+
+## Monthly & Annual Biggest winners and Losers
+month <- dfAll %>% 
+   group_by(CAL,GEO) %>% 
+   mutate(lagMonth=lag(Value),monthchange=100*Value/lagMonth-100) %>% 
+   filter(Ref_Date==max(Ref_Date)) %>% 
+   arrange(monthchange)
+ 
+
+   
+  year <- dfAll %>% 
+     group_by(CAL,GEO) %>% 
+     mutate(lagMonth=lag(Value, n=12L),yearchange=100*Value/lagMonth-100) %>% 
+     filter(Ref_Date==max(Ref_Date)) %>% 
+   arrange(yearchange)
+  
+  m_down <- paste(head(month,1)$GEO,head(month,1)$CAL,head(month,1)$Value,round(head(month,1)$monthchange,1),"%",sep=" ")
+   m_up <- paste(tail(month,1)$GEO,tail(month,1)$CAL,tail(month,1)$Value,round(tail(month,1)$monthchange,1),"%",sep=" ")
+ y_down <- paste(head(year,1)$GEO,head(year,1)$CAL,head(year,1)$Value,round(head(year,1)$yearchange,1),"%",sep=" ")
+   y_up <- paste(tail(myear,1)$GEO,tail(year,1)$CAL,tail(year,1)$Value,round(tail(year,1)$yearchange,1),"%",sep=" ")
 
 
 ```
@@ -38,12 +63,70 @@ includeMarkdown("commodityInfo.md")
 
 ```
 
-Row {data-height=500}
+Row {data-width=400}}
+-----------------------------------------------------------------------
+
+### Monthly Up
+
+```{r}
+
+renderValueBox({
+  valueBox(value = m_up,
+  icon = "fa-upload")
+  
+  })
+
+
+
+```
+
+### Monthly Down
+
+```{r}
+
+renderValueBox({
+  valueBox(value = m_down,
+  icon = "fa-download")
+  
+  })
+
+
+
+```
+
+### Annual Up
+
+```{r}
+
+renderValueBox({
+  valueBox(value = y_up,
+  icon = "fa-upload")
+  
+  })
+
+
+
+```
+
+### Annual Down
+
+```{r}
+
+renderValueBox({
+  valueBox(value = y_down,
+  icon = "fa-download")
+  
+  })
+
+
+
+```
+
+Row {data-width=600}
 -----------------------------------------------------------------------
 
 
-Column {data-width=500}
------------------------------------------------------------------------
+
 
 ### Index of Farm Product Prices by Largest Provinces (All Provinces 1985=100)
 
@@ -68,8 +151,7 @@ plotlyOutput("farmProduct_ts")
 
 ```
 
-Column {data-width=500 .tabset}
------------------------------------------------------------------------
+
 
 ###  Meat & Poultry Prices $/kg - Ontario  
 
@@ -118,10 +200,6 @@ DT::renderDataTable ({
 })
 ```
 
-Row {data-height=500}
------------------------------------------------------------------------
-
-### Highlights
 
 
 Some other area
