@@ -3,10 +3,11 @@ title: "Statistics Canada"
 author: "mytinyshinys"
 output: 
   flexdashboard::flex_dashboard:
+    theme: journal
     orientation: rows
     vertical_layout: fill
     social: [ menu ]
-    source_code: embed
+   # source_code: embed
 runtime: shiny 
 csl: biomed-central.csl
 ---
@@ -17,6 +18,10 @@ library(readr)
 library(plotly)
 library(dplyr)
 
+## unamended data download (but for just 4 provinces)
+original <- read_csv("data/foodCommodityPricesMainProvinces.csv")
+
+
 ## commodities with data from 1985
 df <- read_csv("data/commodityPrices.csv")
 index <- read_csv("data/commodityIndex_1985.csv")
@@ -25,25 +30,51 @@ index <- read_csv("data/commodityIndex_1985.csv")
 dfAll <- read_csv("data/mostCommodityPrices.csv")
 
 ## Monthly & Annual Biggest winners and Losers
-month <- dfAll %>% 
-   group_by(CAL,GEO) %>% 
-   mutate(lagMonth=lag(Value),monthchange=100*Value/lagMonth-100) %>% 
-   filter(Ref_Date==max(Ref_Date)) %>% 
-   arrange(monthchange)
- 
+month <- dfAll %>%
+group_by(CAL, GEO) %>%
+mutate(lagMonth = lag(Value),
+monthchange = 100 * Value / lagMonth - 100) %>%
+filter(Ref_Date == max(Ref_Date)) %>%
+arrange(monthchange)
 
-   
-  year <- dfAll %>% 
-     group_by(CAL,GEO) %>% 
-     mutate(lagMonth=lag(Value, n=12L),yearchange=100*Value/lagMonth-100) %>% 
-     filter(Ref_Date==max(Ref_Date)) %>% 
-   arrange(yearchange)
-  
-  m_down <- paste(head(month,1)$GEO,head(month,1)$CAL,head(month,1)$Value,round(head(month,1)$monthchange,1),"%",sep=" ")
-   m_up <- paste(tail(month,1)$GEO,tail(month,1)$CAL,tail(month,1)$Value,round(tail(month,1)$monthchange,1),"%",sep=" ")
- y_down <- paste(head(year,1)$GEO,head(year,1)$CAL,head(year,1)$Value,round(head(year,1)$yearchange,1),"%",sep=" ")
-   y_up <- paste(tail(myear,1)$GEO,tail(year,1)$CAL,tail(year,1)$Value,round(tail(year,1)$yearchange,1),"%",sep=" ")
+month$GEO[month$GEO == "British Columbia"] <- "B.C."
 
+
+year <- dfAll %>%
+group_by(CAL, GEO) %>%
+mutate(lagMonth = lag(Value, n = 12L),
+yearchange = 100 * Value / lagMonth - 100) %>%
+filter(Ref_Date == max(Ref_Date)) %>%
+arrange(yearchange)
+
+year$GEO[year$GEO == "British Columbia"] <- "B.C."
+
+
+
+m_down <-
+paste(head(month, 1)$GEO,
+head(month, 1)$CAL,
+round(head(month, 1)$monthchange, 1),
+"%",
+sep = " ")
+m_up <-
+paste(tail(month, 1)$GEO,
+tail(month, 1)$CAL,
+round(tail(month, 1)$monthchange, 1),
+"%",
+sep = " ")
+y_down <-
+paste(head(year, 1)$GEO,
+head(year, 1)$CAL,
+round(head(year, 1)$yearchange, 1),
+"%",
+sep = " ")
+y_up <-
+paste(tail(year, 1)$GEO,
+tail(year, 1)$CAL,
+round(tail(year, 1)$yearchange, 1),
+"%",
+sep = " ")
 
 ```
 Farm Product Prices
@@ -72,7 +103,8 @@ Row {data-width=400}}
 
 renderValueBox({
   valueBox(value = m_up,
-  icon = "fa-upload")
+  icon = "fa-upload",
+  color = "#92e888")
   
   })
 
@@ -86,7 +118,8 @@ renderValueBox({
 
 renderValueBox({
   valueBox(value = m_down,
-  icon = "fa-download")
+  icon = "fa-download",
+  color = "#e88888")
   
   })
 
@@ -100,7 +133,8 @@ renderValueBox({
 
 renderValueBox({
   valueBox(value = y_up,
-  icon = "fa-upload")
+  icon = "fa-upload",
+  color = "#92e888")
   
   })
 
@@ -114,8 +148,8 @@ renderValueBox({
 
 renderValueBox({
   valueBox(value = y_down,
-  icon = "fa-download")
-  
+  icon = "fa-download",
+  color = "#e88888")
   })
 
 
@@ -131,20 +165,24 @@ Row {data-width=600}
 ### Index of Farm Product Prices by Largest Provinces (All Provinces 1985=100)
 
 ```{r}
-selectInput("commodity",label="Choose Product", choices=index$CAL )
+selectInput("commodity", label = "Choose Product", choices = index$CAL)
 output$farmProduct_ts <- renderPlotly({
-  print(input$commodity)
-  df %>% 
-  group_by(GEO) %>% 
-  filter(CAL==input$commodity) %>% ## issue with milk as no baseindex
-  left_join(index) %>% 
-  mutate(index=round(100*Value/baseValue,1)) %>% 
-  plot_ly() %>% 
-  add_lines(x=~Ref_Date, y=~index,color=~GEO) %>% 
-    layout(margin=list(b=120),
-           xaxis=list(title=""),
-           title="Pan/Zoom/Hover. Legend Entries are Toggable") %>% 
-   config(displayModeBar = F,showLink = F)
+print(input$commodity)
+df %>%
+group_by(GEO) %>%
+filter(CAL == input$commodity) %>% ## issue with milk as no baseindex
+left_join(index) %>%
+mutate(index = round(100 * Value / baseValue, 1)) %>%
+plot_ly() %>%
+add_lines(x =  ~ Ref_Date,
+y =  ~ index,
+color =  ~ GEO) %>%
+layout(
+margin = list(b = 130),
+xaxis = list(title = ""),
+title = "Pan/Zoom/Hover. Legend Entries are Toggable"
+) %>%
+config(displayModeBar = F, showLink = F)
 })
 
 plotlyOutput("farmProduct_ts")
@@ -158,57 +196,84 @@ plotlyOutput("farmProduct_ts")
 ```{r}
 
 
- meat <- c("Cattle","Calves","Lambs","Hogs","Chickens","Turkeys")
+meat <- c("Cattle", "Calves", "Lambs", "Hogs", "Chickens", "Turkeys")
 renderPlotly({
- 
-
- df %>% 
-  filter(CAL %in% meat &GEO=="Ontario"&Ref_Date>="1985/01") %>% 
-  mutate(perKilo=ifelse(CAL=="Chickens"|CAL=="Turkeys",Value,Value*2.20462/100)) %>% 
-  group_by(CAL) %>% 
-  plot_ly() %>% 
-  add_lines(x=~Ref_Date, y=~perKilo,color=~CAL) %>% 
-    layout(
-      title="Pan/Zoom/Hover. Legend Entries are Toggable")
-    
-
+df %>%
+filter(CAL %in% meat & GEO == "Ontario" & Ref_Date >= "1985/01") %>%
+mutate(perKilo = ifelse(CAL == "Chickens" |
+CAL == "Turkeys", Value, Value * 2.20462 / 100)) %>%
+group_by(CAL) %>%
+plot_ly() %>%
+add_lines(x =  ~ Ref_Date,
+y =  ~ perKilo,
+color =  ~ CAL) %>%
+layout(
+margin = list(b = 100),
+xaxis = list(title = ""),
+title = "Pan/Zoom/Hover. Legend Entries are Toggable"
+) %>%
+config(displayModeBar = F, showLink = F)
 })
+
+
+
 ```
 
-### Data
+### All Data Downloaded (Scaled down for Charts and Value Boxes)
 
 ```{r}
 
-
- meat <- c("Cattle","Calves","Lambs","Hogs","Chickens","Turkeys")
-
+ 
 DT::renderDataTable ({
- 
- df %>% 
-  filter(CAL %in% meat &GEO=="Ontario"&Ref_Date>="1985/01") %>% 
-  mutate(perKilo=ifelse(CAL=="Chickens"|CAL=="Turkeys",Value,Value*2.20462/100)) %>% 
-  #group_by(CAL) %>% 
- DT::datatable(class='compact stripe hover row-border order-column',rownames=FALSE,
-               extensions = 'Buttons',
-               options= list(paging = FALSE, searching = TRUE,info=FALSE,
-                             dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-     deferRender = TRUE,
-  scrollY = 400,
-  scroller = TRUE))
+  original %>%
+  DT::datatable(
+  class = 'compact stripe hover row-border order-column',
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+  paging = FALSE,
+  searching = TRUE,
+  info = FALSE,
+  dom = 'Bfrtip',
+  buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+  deferRender = TRUE,
+  scrollY = 500,
+  scroller = TRUE
+  )
+  )
+  })
 
-})
+
+## Once get tab setup
+#  meat <- c("Cattle","Calves","Lambs","Hogs","Chickens","Turkeys")
+# 
+# DT::renderDataTable ({
+#  
+#  df %>% 
+#   filter(CAL %in% meat &GEO=="Ontario"&Ref_Date>="1985/01") %>% 
+#   mutate(perKilo=ifelse(CAL=="Chickens"|CAL=="Turkeys",Value,Value*2.20462/100)) %>% 
+#   #group_by(CAL) %>% 
+#  DT::datatable(class='compact stripe hover row-border order-column',rownames=FALSE,
+#                extensions = 'Buttons',
+#                options= list(paging = FALSE, searching = TRUE,info=FALSE,
+#                              dom = 'Bfrtip',
+#     buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+#      deferRender = TRUE,
+#   scrollY = 500,
+#   scroller = TRUE))
+
+
 ```
 
 
 
-Some other area
-===================================== 
+<!-- Some other area -->
+<!-- =====================================  -->
 
-Inputs {.sidebar data-width=250}
--------------------------------------
+<!-- Inputs {.sidebar data-width=250} -->
+<!-- ------------------------------------- -->
 
-```{r}
-includeMarkdown("statsCanInfo.md")
-hr()
-```
+<!-- ```{r} -->
+<!-- includeMarkdown("statsCanInfo.md") -->
+<!-- hr() -->
+<!-- ``` -->
